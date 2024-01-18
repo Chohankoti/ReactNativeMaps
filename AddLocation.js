@@ -1,84 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
-import locationsData from './LocationData';
 
-const AddLocation = () => {
-  const [locationName, setLocationName] = useState('');
+export default function AddLocation() {
   const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
-    getLocationAsync();
-  }, []);
-
-  const getLocationAsync = async () => {
+  (async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      console.error('Permission to access location was denied');
+      setErrorMsg('Permission to access location was denied');
       return;
     }
 
-    let location = await Location.getCurrentPositionAsync({});
-    setLocation(location);
-  };
-
-  const handleAddLocation = () => {
-    if (locationName && location) {
-      const newLocation = {
-        name: locationName,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 1,
-        longitudeDelta: 1,
-      };
-      locationsData.push(newLocation);
-      setLocationName('');
-    } else {
-      console.warn('Please enter a name.');
+    try {
+      let location = await Location.getCurrentPositionAsync({});
+      console.log('Location:', location);
+      setLocation(location);
+    } catch (error) {
+      console.error('Error fetching location:', error);
+      setErrorMsg('Error fetching location');
     }
-  };
+  })();
+}, []);
+
+
+  let text = 'Waiting..';
+  if (errorMsg) {
+    text = errorMsg;
+  } else if (location) {
+    text = JSON.stringify(location);
+  }
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Location Name"
-        value={locationName}
-        onChangeText={(text) => setLocationName(text)}
-      />
-      {location && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Latitude"
-            value={location.coords.latitude.toString()}
-            editable={false}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Longitude"
-            value={location.coords.longitude.toString()}
-            editable={false}
-          />
-        </>
-      )}
-      <Button title="Add Location" onPress={handleAddLocation} />
+      <Text style={styles.paragraph}>{text}</Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
   },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginVertical: 10,
-    paddingHorizontal: 10,
+  paragraph: {
+    fontSize: 18,
+    textAlign: 'center',
   },
 });
-
-export default AddLocation;
